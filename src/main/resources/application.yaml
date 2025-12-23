@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: banking-service
+  mvc:
+    problemdetails:
+      enabled: true
+    main:
+      banner-mode: off
+    output.ansi:
+      enabled: ALWAYS
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bankingdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: true
+    properties:
+      hibernate:
+        format-sql: true
+      database: postgresql
+      database-platform: org.hibernate.dialect.PostgreSQL9Dialect
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+        test:
+          context: DEBUG
+      ozkayret:
+        user: DEBUG
+
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    path: /docs/api-docs
+  swagger-ui:
+    path: /docs/swagger-ui.html
+    operationsSorter: method
+
+jwt:
+  secret: 4B6150645367566B5970337336763979244226452948404D6251655468576D5A7134743777217A25432A462D4A614E645266556A586E3272357538782F413F44
+  expiration: 172800000 #2 days
+
+
+frontend:
+  url: http://localhost:5173
