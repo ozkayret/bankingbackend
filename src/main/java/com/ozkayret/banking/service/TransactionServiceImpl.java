@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.ozkayret.banking.dtos.AccountHistoryResponse;
@@ -32,6 +34,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final TransactionMapper transactionMapper;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -40,15 +43,19 @@ public class TransactionServiceImpl implements TransactionService {
 
         if(request.amount().compareTo(BigDecimal.ZERO) <= 0){
             throw new AmountNotBeNegative(
-                    "Gönderilecek Tutar sıfırdan büyük olmalı");
+                    messageSource.getMessage("amount.not.negative", null, LocaleContextHolder.getLocale()));
         }
-        Account accountFrom = accountRepository.findByNumber(request.from()).orElseThrow(() -> new AccountNotFoundException(String.format("%s numaralı hesap bulunmadı", request.from())));
+        Account accountFrom = accountRepository.findByNumber(request.from()).orElseThrow(
+                () -> new AccountNotFoundException(messageSource.getMessage("account.not.found.with.number",
+                        new Object[] { request.from() }, LocaleContextHolder.getLocale())));
         if (!accountFrom.getUser().getUsername().equals(principal.getName())) {
-            log.error( "Hesap sahibi olmadığınız için hesap bilgilerine erişemezsiniz");
+            log.error(messageSource.getMessage("account.access.denied", null, LocaleContextHolder.getLocale()));
             throw new ForbiddenException(
-                    "Hesap sahibi olmadığınız için hesap bilgilerine erişemezsiniz");
+                    messageSource.getMessage("account.access.denied", null, LocaleContextHolder.getLocale()));
         }
-        Account accountTo = accountRepository.findByNumber(request.to()).orElseThrow(() -> new AccountNotFoundException(String.format("%s numaralı hesap bulunmadı", request.from())));
+        Account accountTo = accountRepository.findByNumber(request.to()).orElseThrow(
+                () -> new AccountNotFoundException(messageSource.getMessage("account.not.found.with.number",
+                        new Object[] { request.to() }, LocaleContextHolder.getLocale())));
         Transaction transaction = new Transaction();
         transaction.setTo(accountTo);
         transaction.setFrom(accountFrom);
@@ -74,11 +81,13 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<AccountHistoryResponse> history(UUID accountId,Principal principal) {
-        Account account = accountRepository.findById(accountId).orElseThrow(() -> new AccountNotFoundException(String.format("%s numaralı hesap bulunmadı", accountId)));
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException(messageSource.getMessage("account.not.found.with.id",
+                        new Object[] { accountId }, LocaleContextHolder.getLocale())));
         if (!account.getUser().getUsername().equals(principal.getName())) {
-            log.error( "Hesap sahibi olmadığınız için hesap bilgilerine erişemezsiniz");
+            log.error(messageSource.getMessage("account.access.denied", null, LocaleContextHolder.getLocale()));
             throw new ForbiddenException(
-                    "Hesap sahibi olmadığınız için hesap bilgilerine erişemezsiniz");
+                    messageSource.getMessage("account.access.denied", null, LocaleContextHolder.getLocale()));
         }
         return transactionMapper.toAccountHistoryResponse(account.getSentTransactions());
     }

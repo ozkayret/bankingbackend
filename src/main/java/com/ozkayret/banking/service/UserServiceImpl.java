@@ -17,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,18 +30,21 @@ public class UserServiceImpl implements UserService{
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final PasswordEncoder passwordEncoder;
+    private final MessageSource messageSource;
 
     @Override
     public void register(RegisterRequest request) {
 
         if (Boolean.TRUE.equals(userRepository.existsByUsername(request.username()))) {
-            log.error("Error: Username is already taken!");
-            throw new UserNameExistException("Error: Username is already taken!");
+            log.error(messageSource.getMessage("username.exists", null, LocaleContextHolder.getLocale()));
+            throw new UserNameExistException(
+                    messageSource.getMessage("username.exists", null, LocaleContextHolder.getLocale()));
         }
 
         if (Boolean.TRUE.equals(userRepository.existsByEmail(request.email()))) {
-            log.error("Error: Email is already in use!");
-            throw new EmailExistException("Error: Email is already in use!");
+            log.error(messageSource.getMessage("email.exists", null, LocaleContextHolder.getLocale()));
+            throw new EmailExistException(
+                    messageSource.getMessage("email.exists", null, LocaleContextHolder.getLocale()));
         }
 
         User user = userMapper.registerDtoToUser(request);

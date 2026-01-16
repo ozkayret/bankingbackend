@@ -4,15 +4,17 @@ import com.ozkayret.banking.dtos.AccountDetailResponse;
 import com.ozkayret.banking.dtos.AccountNumberDto;
 import com.ozkayret.banking.dtos.AccountRequest;
 import com.ozkayret.banking.dtos.AccountResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.security.Principal;
-import java.util.List;
+
 import java.util.UUID;
 
 public interface AccountService {
     void createAccount(AccountRequest request,Principal principal);
 
-    List<AccountResponse> getAccounts(String name,String accountNumber);
+    Page<AccountResponse> getAccounts(String name, String accountNumber, Pageable pageable);
 
     void updateAccount(AccountRequest request);
 

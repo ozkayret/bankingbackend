@@ -12,6 +12,7 @@ import com.ozkayret.banking.repository.AccountRepository;
 import com.ozkayret.banking.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.MessageSource;
 
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -21,7 +22,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class TransactionServiceImplTest {
@@ -30,14 +30,16 @@ class TransactionServiceImplTest {
     private AccountRepository accountRepository;
     private TransactionMapper transactionMapper;
     private TransactionService transactionService;
+    private MessageSource messageSource;
 
     @BeforeEach
     void setUp() {
         transactionRepository = mock(TransactionRepository.class);
         accountRepository = mock(AccountRepository.class);
         transactionMapper = mock(TransactionMapper.class);
-        transactionService = new TransactionServiceImpl(transactionRepository, accountRepository, transactionMapper);
+        transactionService = new TransactionServiceImpl(transactionRepository, accountRepository, transactionMapper, messageSource);
     }
+
     @Test
     void transfer() {
         TransferRequest request = new TransferRequest("from", "to", BigDecimal.valueOf(50));

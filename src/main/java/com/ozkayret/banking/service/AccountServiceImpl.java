@@ -13,6 +13,11 @@ import com.ozkayret.banking.repository.AccountRepository;
 import com.ozkayret.banking.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,11 +33,13 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final AccountMapper accountMapper;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
     public void createAccount(AccountRequest request, Principal principal) {
-        User user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new AccountNotFoundException("User not found"));
+        User user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new AccountNotFoundException(
+                messageSource.getMessage("user.not.found", null, LocaleContextHolder.getLocale())));
         Account account = accountMapper.toAccount(request);
         account.setUser(user);
         accountRepository.save(account);
@@ -41,23 +48,26 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<AccountResponse> getAccounts(String name, String id) {
+    public Page<AccountResponse> getAccounts(String name, String id, Pageable pageable) {
         if (id != null && !id.equals("")) {
-            Account accounts = accountRepository.findByNumber(id).orElseThrow(() -> new AccountNotFoundException("Hesap bulunamadı"));
-            return accountMapper.toAccountResponseList(List.of(accounts));
+            Account account = accountRepository.findByNumber(id).orElseThrow(() -> new AccountNotFoundException(
+                    messageSource.getMessage("account.not.found", null, LocaleContextHolder.getLocale())));
+            return new PageImpl<>(List.of(accountMapper.toAccountResponse(account)), pageable, 1);
         } else if (name != null && !name.equals("")) {
-            List<Account> accounts = accountRepository.findByName(name);
-            return accountMapper.toAccountResponseList(accounts);
+            Page<Account> accounts = accountRepository.findByName(name, pageable);
+            return accounts.map(accountMapper::toAccountResponse);
         } else {
-            List<Account> accounts = accountRepository.findAll();
-            return accountMapper.toAccountResponseList(accounts);
+            Page<Account> accounts = accountRepository.findAll(pageable);
+            return accounts.map(accountMapper::toAccountResponse);
         }
     }
 
 
     @Override
     public void updateAccount(AccountRequest request) {
-        Account account = accountRepository.findByNumber(request.number()).orElseThrow(() -> new AccountNotFoundException(String.format("%s numaralı hesap bulunmadı", request.number())));
+        Account account = accountRepository.findByNumber(request.number()).orElseThrow(
+                () -> new AccountNotFoundException(messageSource.getMessage("account.not.found.with.number",
+                        new Object[]{request.number()}, LocaleContextHolder.getLocale())));
         account.setBalance(request.balance());
         account.setName(request.name());
         accountRepository.save(account);
@@ -70,12 +80,13 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDetailResponse getAccountById(UUID id, Principal principal) {
-        Account account = accountRepository.findById(id).orElseThrow(() -> new AccountNotFoundException(String.format("%s id'li hesap bulunmadı", id)));
+        Account account = accountRepository.findById(id).orElseThrow(() -> new AccountNotFoundException(messageSource
+                .getMessage("account.not.found.with.id", new Object[]{id}, LocaleContextHolder.getLocale())));
 
         if (!account.getUser().getUsername().equals(principal.getName())) {
-            log.error(String.format("Hesap sahibi olmadığınız için hesap bilgilerine erişemezsiniz", id));
+            log.error(messageSource.getMessage("account.access.denied", null, LocaleContextHolder.getLocale()));
             throw new ForbiddenException(
-                    String.format("Hesap sahibi olmadığınız için hesap bilgilerine erişemezsiniz", id));
+                    messageSource.getMessage("account.access.denied", null, LocaleContextHolder.getLocale()));
         }
 
         return accountMapper.toAccountDetailResponse(account);

@@ -17,8 +17,6 @@ public record AccountRequest(
         @NotEmpty(message = "name is required")
         String name,
         @NotNull(message = "balance is required")
-        @NotBlank(message = "balance is required")
-        @NotEmpty(message = "balance is required")
         @JsonFormat(shape=JsonFormat.Shape.STRING)
         BigDecimal balance
 ) {
